@@ -1,8 +1,6 @@
 import heapq
-import math
-from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Set, Optional
+from typing import List, Tuple, Set, Optional
 from HexGrid import create_hex_grid
 import matplotlib.pyplot as plt
 
@@ -41,6 +39,7 @@ class GameState:
             abs(self.speed_multiplier - other.speed_multiplier) < 1e-6 and
             self.last_direction == other.last_direction
         )
+
 
 class AStarTreasureHunt:
     def __init__(self, maze):
@@ -89,7 +88,6 @@ class AStarTreasureHunt:
                 room = self.maze.rooms[(new_row, new_col)]
                 if room.effect.name != 'Obstacle':
                     neighbors.append((new_row, new_col))
-        
         return neighbors
     
     def _calculate_movement_direction(self, from_pos: Tuple[int, int], to_pos: Tuple[int, int]) -> Tuple[int, int]:
@@ -128,6 +126,12 @@ class AStarTreasureHunt:
         successors = []
         neighbors = self._get_hex_neighbors(state.position[0], state.position[1])
         
+        if state.position == (1, 5):
+            print(f"Neighbors of (1, 5): {neighbors}")
+        if state.position == (0, 7):
+            print(f"Neighbors of (0, 7): {neighbors}")
+        
+
         for next_pos in neighbors:
             # Calculate movement cost based on current state's multipliers
             movement_cost = 1.0 * state.energy_multiplier * state.speed_multiplier
@@ -169,28 +173,30 @@ class AStarTreasureHunt:
             elif effect_name == 'Trap 3' and not effect_already_used:
                 # For Trap 3, first add the state where we step onto the trap
                 new_state.activated_effects.add(next_pos)
-                successors.append((new_state, movement_cost))
                 
-                # Then create the teleported state
+                # Calculate the teleported position
                 current_direction = self._calculate_movement_direction(state.position, next_pos)
                 trap3_pos = self._apply_trap3_effect(next_pos, current_direction)
                 
-                # Only create teleported state if position actually changes
                 if trap3_pos != next_pos:
+                    # Create a new state for the final position after Trap 3 effect
                     teleported_state = GameState(
-                        position=trap3_pos,
+                        position=trap3_pos,  # This is the actual final position
                         collected_treasures=new_state.collected_treasures.copy(),
                         available_treasures=new_state.available_treasures.copy(),
                         activated_effects=new_state.activated_effects.copy(),
                         energy_multiplier=new_state.energy_multiplier,
                         speed_multiplier=new_state.speed_multiplier,
-                        last_direction=self._calculate_movement_direction(next_pos, trap3_pos),
+                        last_direction=current_direction,
                         total_cost=new_state.total_cost  # No additional cost for teleportation
                     )
-                    successors.append((teleported_state, 0.0))  # No cost for the teleportation itself
+                    # Only add the teleported state, not the intermediate state
+                    successors.append((teleported_state, movement_cost))
+                    # Skip adding the original state since we're using the teleported one
+                    continue
                 
-                # Skip adding the original state since we've handled Trap 3 specially
-                continue
+                # If no teleportation occurred, add the original state
+                successors.append((new_state, movement_cost))
                 
             elif effect_name == 'Trap 4' and not effect_already_used:
                 # Remove all uncollected treasures
@@ -229,7 +235,8 @@ class AStarTreasureHunt:
             distance = max(dx, dy + dx/2)
             min_distance = min(min_distance, distance)
         
-        return min_distance * state.energy_multiplier * state.speed_multiplier
+        heuristic_value = min_distance * state.energy_multiplier * state.speed_multiplier
+        return heuristic_value
     
     def solve(self) -> Tuple[List[GameState], float]:
         """Solve the treasure hunt using A* algorithm"""
@@ -367,19 +374,23 @@ class AStarTreasureHunt:
                     print(f"WARNING: Effect {effect_name} at {pos} activated multiple times (step {i})")
                 else:
                     all_activated.add(pos)
+        for i in range(len(path) - 1):
+            print(f"Step {i}: {path[i].position} -> {path[i+1].position}")
+            self.visualize_path(path[i])
         
+    def visualize_path(self, path):
         # Create visualization with path highlighted
-        colors, symbols = self.maze.getVisualizationAttributes(self.maze.rooms, path[-1].position)
+        colors, symbols = self.maze.getVisualizationAttributes(self.maze.rooms, path.position)
         
         # Highlight path
-        for i, state in enumerate(path):
-            pos = state.position
-            if i == 0:
-                colors[pos] = '#00FF00'  # Start in bright green
-            elif i == len(path) - 1:
-                colors[pos] = '#FF0000'  # End in red
-            else:
-                colors[pos] = '#90EE90'  # Path in light green
+        # for i, state in enumerate(path):
+        #     pos = state.position
+        #     if i == 0:
+        #         colors[pos] = '#00FF00'  # Start in bright green
+        #     elif i == len(path) - 1:
+        #         colors[pos] = '#FF0000'  # End in red
+        #     else:
+        #         colors[pos] = '#90EE90'  # Path in light green
         
         # Transform coordinates for visualization
         def transform_row(row, total_rows):
@@ -399,8 +410,10 @@ class AStarTreasureHunt:
                                 colors=transformed_colors,
                                 symbols=transformed_symbols)
         
-        plt.title(f"A* Solution - Total Cost: {path[-1].total_cost:.2f}")
+        plt.title(f"A* Solution - Total Cost: {path.total_cost:.2f}")
         plt.show()
+
+  
 
 if __name__ == "__main__":
     from TreasureHunt import treasureHunt

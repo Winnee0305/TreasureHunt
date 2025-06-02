@@ -49,14 +49,26 @@ class HexRoom:
     def setEffect(self, effect):
         self.effect = Effect(effect)
 
-class HexMaze:
-    def __init__(self, name, nrow, ncol):
-        self.name = name
+class TreasureHunt:
+    def __init__(self, nrow, ncol):
         self.nrow = nrow
         self.ncol = ncol
         self.rooms = {}
         self.create_rooms()
         self.current_room = (0, 0) 
+        self.available_treasures = self.find_treasures()
+        self.collected_treasures = []
+        self.energy_multiplier = 1.0  
+        self.speed_multiplier = 1.0   
+        self.last_direction = None # For Trap 3
+        self.total_cost: float = 0.0
+        
+    def find_treasures(self):
+        treasures = []
+        for pos, room in self.rooms.items():
+            if room.effect.name == 'Treasure':
+                treasures.append(pos)
+        return treasures
 
     def create_rooms(self):
         for row in range(self.nrow):
@@ -114,7 +126,7 @@ class HexMaze:
     
 
 
-treasureHunt = HexMaze("Treasure Hunt", 6, 10)
+treasureHunt = TreasureHunt(6, 10)
 
 treasureHunt.setEffect({
     (3, 0): 'Obstacle',
