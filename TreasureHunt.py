@@ -42,9 +42,6 @@ class HexRoom:
         self.parent = parent
         self.neighbors = []
         self.effect = Effect('None')  # Default effect
-        
-    def add_neighbors(self, neighbor_room):
-        self.neighbors.append(neighbor_room)
 
     def setEffect(self, effect):
         self.effect = Effect(effect)
@@ -58,13 +55,6 @@ class TreasureHunt:
         self.starting_room = (0, 0) 
         self.path = []
 
-    def find_treasures(self):
-        treasures = []
-        for pos, room in self.rooms.items():
-            if room.effect.name == 'Treasure':
-                treasures.append(pos)
-        return treasures
-
     def create_rooms(self):
         for row in range(self.nrow):
             for col in range(self.ncol):
@@ -76,14 +66,6 @@ class TreasureHunt:
             if room_idx in self.rooms:
                 self.rooms[room_idx].setEffect(effect_value)
 
-    def expandNeighbor(self, room):
-        if room in self.rooms:
-            row, col = room.room_idx
-            if row < self.nrow - 1:
-                neighbor_idx = (row + 1, col)
-                if neighbor_idx in self.rooms:
-                    room.add_neighbors(self.rooms[neighbor_idx])
-
     def getVisualizationAttributes(self, rooms, path):
         colors = {}
         symbols = {}
@@ -91,8 +73,6 @@ class TreasureHunt:
             if room.effect is not None:
                 colors[room_idx] = room.effect.color
                 symbols[room_idx] = room.effect.symbol
-            # if room_idx == self.starting_room:
-            #     colors[room_idx] = '#008000' # Highlight current room in green
         for p in path:
             pos = p.position
             colors[pos] = "#FFFF00"  # Highlight path 
@@ -125,34 +105,3 @@ class TreasureHunt:
         
         plt.title(f"A* Solution  \n Step:{len(self.path)-1} | Current Total Cost: {self.path[-1].total_cost:.2f}", fontsize = 30)
         plt.show()
-
-
-treasureHunt = TreasureHunt(6, 10)
-
-treasureHunt.setEffect({
-    (3, 0): 'Obstacle',
-    (1, 1): 'Trap 2',
-    (3, 1): 'Reward 1',
-    (2, 2): 'Obstacle',
-    (1, 3): 'Trap 4',
-    (3, 3): 'Obstacle',
-    (4, 2): 'Trap 2',
-    (4, 3): 'Treasure',
-    (0, 4): 'Reward 1',
-    (1, 4): 'Treasure',
-    (2, 4): 'Obstacle',
-    (4, 4): 'Obstacle',
-    (3, 5): 'Trap 3',
-    (5, 5): 'Reward 2',
-    (1, 6): 'Trap 3',
-    (3, 6): 'Obstacle',
-    (4, 6): 'Obstacle',
-    (2, 7): 'Reward 2',
-    (3, 7): 'Treasure',
-    (4, 7): 'Obstacle',
-    (1, 8): 'Obstacle',
-    (2, 8): 'Trap 1',
-    (3, 9): 'Treasure'
-
-})
-
