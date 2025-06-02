@@ -91,31 +91,6 @@ class AStarTreasureHunt:
                     neighbors.append((new_row, new_col))
         
         return neighbors
-
-    # Test function to verify neighbors
-    def test_neighbors(maze):
-        """Test function to verify neighbor calculations"""
-        solver = AStarTreasureHunt(maze)
-        
-        # Test a few key positions to verify the fix
-        test_positions = [
-            (0, 0),  # Start position - even column
-            (0, 1),  # Odd column position  
-            (4, 5),  # Position that was causing issues - odd column
-            (2, 7),  # Another problematic position - odd column
-        ]
-        
-        print("Testing neighbor calculations:")
-        for pos in test_positions:
-            if pos in maze.rooms:
-                neighbors = solver._get_hex_neighbors(pos[0], pos[1])
-                print(f"Position {pos} (col {'odd' if pos[1] % 2 == 1 else 'even'}): {neighbors}")
-            else:
-                print(f"Position {pos}: Not in maze")
-
-    # Example usage:
-    # test_neighbors(treasureHunt)
-
     
     def _calculate_movement_direction(self, from_pos: Tuple[int, int], to_pos: Tuple[int, int]) -> Tuple[int, int]:
         """Calculate the direction vector for movement"""
