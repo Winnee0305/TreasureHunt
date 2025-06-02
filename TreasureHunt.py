@@ -55,14 +55,9 @@ class TreasureHunt:
         self.ncol = ncol
         self.rooms = {}
         self.create_rooms()
-        self.current_room = (0, 0) 
-        self.available_treasures = self.find_treasures()
-        self.collected_treasures = []
-        self.energy_multiplier = 1.0  
-        self.speed_multiplier = 1.0   
-        self.last_direction = None # For Trap 3
-        self.total_cost: float = 0.0
-        
+        self.starting_room = (0, 0) 
+        self.path = []
+
     def find_treasures(self):
         treasures = []
         for pos, room in self.rooms.items():
@@ -89,21 +84,27 @@ class TreasureHunt:
                 if neighbor_idx in self.rooms:
                     room.add_neighbors(self.rooms[neighbor_idx])
 
-    def getVisualizationAttributes(self, rooms, current_room):
+    def getVisualizationAttributes(self, rooms, path):
         colors = {}
         symbols = {}
         for room_idx, room in rooms.items():
             if room.effect is not None:
                 colors[room_idx] = room.effect.color
                 symbols[room_idx] = room.effect.symbol
-            if room_idx == current_room:
-                colors[room_idx] = '#008000' # Highlight current room in green
+            # if room_idx == self.starting_room:
+            #     colors[room_idx] = '#008000' # Highlight current room in green
+        for p in path:
+            pos = p.position
+            colors[pos] = "#FFFF00"  # Highlight path 
+        colors[path[-1].position] = "#008000"  # Highlight current position in green
+
         return colors, symbols
                 
+    def visualize(self, latest_path):
+        self.path.append(latest_path)
+        colors, symbols= self.getVisualizationAttributes(self.rooms, self.path)
 
-    def visualize(self):
-        colors, symbols= self.getVisualizationAttributes(self.rooms, self.current_room)
-
+     
         def transform_row(row, total_rows):
             return total_rows - 1 - row
        
@@ -119,11 +120,11 @@ class TreasureHunt:
         }
 
         fig, ax = create_hex_grid(self.nrow, self.ncol, hex_size=1,
-                                colors=transformed_colors,
-                                symbols=transformed_symbols)
-
-        plt.show() 
-    
+                        colors=transformed_colors,
+                        symbols=transformed_symbols)
+        
+        plt.title(f"A* Solution  \n Step:{len(self.path)-1} | Current Total Cost: {self.path[-1].total_cost:.2f}", fontsize = 30)
+        plt.show()
 
 
 treasureHunt = TreasureHunt(6, 10)
@@ -155,4 +156,3 @@ treasureHunt.setEffect({
 
 })
 
-treasureHunt.visualize()

@@ -126,12 +126,6 @@ class AStarTreasureHunt:
         successors = []
         neighbors = self._get_hex_neighbors(state.position[0], state.position[1])
         
-        if state.position == (1, 5):
-            print(f"Neighbors of (1, 5): {neighbors}")
-        if state.position == (0, 7):
-            print(f"Neighbors of (0, 7): {neighbors}")
-        
-
         for next_pos in neighbors:
             # Calculate movement cost based on current state's multipliers
             movement_cost = 1.0 * state.energy_multiplier * state.speed_multiplier
@@ -179,7 +173,6 @@ class AStarTreasureHunt:
                 trap3_pos = self._apply_trap3_effect(next_pos, current_direction)
                 
                 if trap3_pos != next_pos:
-                    # Create a new state for the final position after Trap 3 effect
                     teleported_state = GameState(
                         position=trap3_pos,  # This is the actual final position
                         collected_treasures=new_state.collected_treasures.copy(),
@@ -194,9 +187,6 @@ class AStarTreasureHunt:
                     successors.append((teleported_state, movement_cost))
                     # Skip adding the original state since we're using the teleported one
                     continue
-                
-                # If no teleportation occurred, add the original state
-                successors.append((new_state, movement_cost))
                 
             elif effect_name == 'Trap 4' and not effect_already_used:
                 # Remove all uncollected treasures
@@ -273,7 +263,7 @@ class AStarTreasureHunt:
                     state = came_from[state]
                 path.append(initial_state)
                 path.reverse()
-                
+                print(f"Solution found with {len(path)} steps and total cost: {current_g:.2f}")
                 return path, current_g
             
             # Explore successors
@@ -324,73 +314,63 @@ class AStarTreasureHunt:
                     f"Energy Mult: {state.energy_multiplier:.2f}, "
                     f"Speed Mult: {state.speed_multiplier:.2f})")
         
-        # Enhanced path validation
-        print("\nPath Validation:")
-        i = 1
-        while i < len(path):
-            prev_state = path[i-1]
-            current_state = path[i]
-            prev_pos = prev_state.position
-            current_pos = current_state.position
+        # # Enhanced path validation
+        # print("\nPath Validation:")
+        # i = 1
+        # while i < len(path):
+        #     prev_state = path[i-1]
+        #     current_state = path[i]
+        #     prev_pos = prev_state.position
+        #     current_pos = current_state.position
             
-            # Check if current position had Trap 3 effect
-            current_room = self.maze.rooms[current_pos]
-            if current_room.effect.name == 'Trap 3' and current_pos in current_state.activated_effects:
-                # Check if next step is the teleportation
-                if i + 1 < len(path):
-                    next_state = path[i + 1]
-                    next_pos = next_state.position
+        #     # Check if current position had Trap 3 effect
+        #     current_room = self.maze.rooms[current_pos]
+        #     if current_room.effect.name == 'Trap 3' and current_pos in current_state.activated_effects:
+        #         # Check if next step is the teleportation
+        #         if i + 1 < len(path):
+        #             next_state = path[i + 1]
+        #             next_pos = next_state.position
                     
-                    # Validate the teleportation
-                    direction = self._calculate_movement_direction(prev_pos, current_pos)
-                    expected_pos = self._apply_trap3_effect(current_pos, direction)
+        #             # Validate the teleportation
+        #             direction = self._calculate_movement_direction(prev_pos, current_pos)
+        #             expected_pos = self._apply_trap3_effect(current_pos, direction)
                     
-                    if next_pos == expected_pos and next_pos != current_pos:
-                        print(f"Step {i}-{i+1}: Trap 3 teleportation from {current_pos} to {next_pos}")
-                        i += 2  # Skip the teleportation step in validation
-                        continue
-                    elif next_pos != current_pos:
-                        print(f"WARNING: Trap 3 teleportation mismatch at step {i+1}")
-                        print(f"  Expected: {expected_pos}, Actual: {next_pos}")
+        #             if next_pos == expected_pos and next_pos != current_pos:
+        #                 print(f"Step {i}-{i+1}: Trap 3 teleportation from {current_pos} to {next_pos}")
+        #                 i += 2  # Skip the teleportation step in validation
+        #                 continue
+        #             elif next_pos != current_pos:
+        #                 print(f"WARNING: Trap 3 teleportation mismatch at step {i+1}")
+        #                 print(f"  Expected: {expected_pos}, Actual: {next_pos}")
             
-            # Normal movement validation
-            neighbors = self._get_hex_neighbors(prev_pos[0], prev_pos[1])
-            if current_pos not in neighbors:
-                print(f"WARNING: Invalid jump from {prev_pos} to {current_pos}")
-                print(f"Valid neighbors of {prev_pos}: {neighbors}")
+        #     # Normal movement validation
+        #     neighbors = self._get_hex_neighbors(prev_pos[0], prev_pos[1])
+        #     if current_pos not in neighbors:
+        #         print(f"WARNING: Invalid jump from {prev_pos} to {current_pos}")
+        #         print(f"Valid neighbors of {prev_pos}: {neighbors}")
             
-            i += 1
+        #     i += 1
         
-        # Check for effect reactivation
-        print("\nEffect Activation Check:")
-        all_activated = set()
-        for i, state in enumerate(path):
-            pos = state.position
-            room = self.maze.rooms[pos]
-            effect_name = room.effect.name
+        # # Check for effect reactivation
+        # print("\nEffect Activation Check:")
+        # all_activated = set()
+        # for i, state in enumerate(path):
+        #     pos = state.position
+        #     room = self.maze.rooms[pos]
+        #     effect_name = room.effect.name
             
-            if effect_name in ['Trap 1', 'Trap 2', 'Trap 3', 'Trap 4', 'Reward 1', 'Reward 2']:
-                if pos in all_activated:
-                    print(f"WARNING: Effect {effect_name} at {pos} activated multiple times (step {i})")
-                else:
-                    all_activated.add(pos)
-        for i in range(len(path) - 1):
-            print(f"Step {i}: {path[i].position} -> {path[i+1].position}")
-            self.visualize_path(path[i])
+        #     if effect_name in ['Trap 1', 'Trap 2', 'Trap 3', 'Trap 4', 'Reward 1', 'Reward 2']:
+        #         if pos in all_activated:
+        #             print(f"WARNING: Effect {effect_name} at {pos} activated multiple times (step {i})")
+        #         else:
+        #             all_activated.add(pos)
+        for i in range(len(path)):
+            self.maze.visualize(path[i])
+
         
     def visualize_path(self, path):
         # Create visualization with path highlighted
         colors, symbols = self.maze.getVisualizationAttributes(self.maze.rooms, path.position)
-        
-        # Highlight path
-        # for i, state in enumerate(path):
-        #     pos = state.position
-        #     if i == 0:
-        #         colors[pos] = '#00FF00'  # Start in bright green
-        #     elif i == len(path) - 1:
-        #         colors[pos] = '#FF0000'  # End in red
-        #     else:
-        #         colors[pos] = '#90EE90'  # Path in light green
         
         # Transform coordinates for visualization
         def transform_row(row, total_rows):
@@ -410,7 +390,7 @@ class AStarTreasureHunt:
                                 colors=transformed_colors,
                                 symbols=transformed_symbols)
         
-        plt.title(f"A* Solution - Total Cost: {path.total_cost:.2f}")
+        plt.title(f"A* Solution - Total Cost: {path.total_cost:.2f}", fontsize=40)
         plt.show()
 
   
