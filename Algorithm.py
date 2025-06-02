@@ -402,16 +402,12 @@ class AStarTreasureHunt:
         plt.title(f"A* Solution - Total Cost: {path[-1].total_cost:.2f}")
         plt.show()
 
-# Example usage
 if __name__ == "__main__":
     from TreasureHunt import treasureHunt
     
-    # Create solver
     solver = AStarTreasureHunt(treasureHunt)
     
-    # Solve the puzzle
     print("Solving treasure hunt with A* algorithm...")
     solution_path, total_cost = solver.solve()
     
-    # Visualize results
     solver.visualize_solution(solution_path)
