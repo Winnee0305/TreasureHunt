@@ -1,4 +1,11 @@
-# Treasure Hunt A\* Pathfinding
+# Treasure Hunt with A\* Search Algorithm
+
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-3.8+-blueviolet?style=for-the-badge)](https://matplotlib.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
+[![Dataclasses](https://img.shields.io/badge/Dataclasses-Builtin%20Module-informational?style=for-the-badge)](https://docs.python.org/3/library/dataclasses.html)
+[![Typing](https://img.shields.io/badge/Typing-Builtin%20Module-informational?style=for-the-badge)](https://docs.python.org/3/library/typing.html)
+[![Heapq](https://img.shields.io/badge/Heapq-Builtin%20Module-informational?style=for-the-badge)](https://docs.python.org/3/library/heapq.html)
 
 This project implements an A\* pathfinding algorithm to solve a treasure hunt game on a hexagonal grid. The game includes various elements such as treasures, traps, and rewards that affect the pathfinding strategy.
 
@@ -42,7 +49,7 @@ src/
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   pip install matplotlib
+   pip install matplotlib numpy
    ```
 3. Run the main script:
    ```bash
@@ -54,8 +61,8 @@ src/
 - **Treasures**: Must be collected to complete the game
 - **Traps**:
   - Trap 1: Doubles energy consumption
-  - Trap 2: Doubles movement time
-  - Trap 3: Forces movement in the last direction
+  - Trap 2: Doubles steps movement
+  - Trap 3: Forces 2 movements in the last direction
   - Trap 4: Removes all uncollected treasures
 - **Rewards**:
   - Reward 1: Halves energy consumption
