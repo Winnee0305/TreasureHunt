@@ -1,44 +1,10 @@
-import heapq
-from dataclasses import dataclass
-from typing import List, Tuple, Set, Optional
-from HexGrid import create_hex_grid
-import matplotlib.pyplot as plt
 
-@dataclass
-class GameState:
-    """Represents the current state of the game"""
-    position: Tuple[int, int]
-    collected_treasures: Set[Tuple[int, int]]
-    available_treasures: Set[Tuple[int, int]]
-    activated_effects: Set[Tuple[int, int]]  # Track which traps/rewards have been used
-    energy_multiplier: float = 1.0  # For Trap 1 and Reward 1
-    speed_multiplier: float = 1.0   # For Trap 2 and Reward 2
-    last_direction: Optional[Tuple[int, int]] = None
-    total_cost: float = 0.0
-    
-    def __hash__(self):
-        return hash((
-            self.position,
-            tuple(sorted(self.collected_treasures)),
-            tuple(sorted(self.available_treasures)),
-            tuple(sorted(self.activated_effects)),
-            self.energy_multiplier,
-            self.speed_multiplier,
-            self.last_direction
-        ))
-    
-    def __eq__(self, other):
-        if not isinstance(other, GameState):
-            return False
-        return (
-            self.position == other.position and
-            self.collected_treasures == other.collected_treasures and
-            self.available_treasures == other.available_treasures and
-            self.activated_effects == other.activated_effects and
-            abs(self.energy_multiplier - other.energy_multiplier) < 1e-6 and
-            abs(self.speed_multiplier - other.speed_multiplier) < 1e-6 and
-            self.last_direction == other.last_direction
-        )
+from ..models.game_state import GameState
+from ..models.node import Node
+from ..models.path_evaluation_info import PathEvaluationInfo
+from typing import List, Tuple, Set
+import heapq
+
 
 class AStarTreasureHunt:
     def __init__(self, maze):
@@ -202,7 +168,7 @@ class AStarTreasureHunt:
                 new_state.speed_multiplier = max(0.125, new_state.speed_multiplier / 2.0)
                 new_state.activated_effects.add(next_pos)
             
-            # Add the state (except for Trap 3 which is handled above)
+            # Add the state
             successors.append((new_state, movement_cost))
         
         return successors
@@ -226,10 +192,9 @@ class AStarTreasureHunt:
         
         heuristic_value = min_distance * state.energy_multiplier * state.speed_multiplier
         return heuristic_value
-    
-    def solve(self) -> Tuple[List[GameState], float, List[dict]]:
-        print("Solving treasure hunt with A* algorithm...")
-        """Solve the treasure hunt using A* algorithm and return path evaluation information"""
+
+    def solve(self) -> Tuple[List[GameState], float, List[PathEvaluationInfo]]:
+        """Solve the treasure hunt using A* algorithm"""
         initial_state = GameState(
             position=self.start_position,
             collected_treasures=set(),
@@ -240,7 +205,9 @@ class AStarTreasureHunt:
         
         # Priority queue: (f_score, tie_breaker, g_score, state)
         tie_breaker = 0
-        open_set = [(self._heuristic(initial_state), tie_breaker, 0.0, initial_state)]
+        initial_h = self._heuristic(initial_state)
+        initial_node = Node(initial_state, initial_h, 0.0, initial_h)
+        open_set = [(initial_h, tie_breaker, 0.0, initial_node)]
         closed_set = set()
         came_from = {}
         g_score = {initial_state: 0.0}
@@ -251,11 +218,9 @@ class AStarTreasureHunt:
         # Track open set state for each step
         step_count = 0
         
-        # Track next chosen node for debugging
-        next_chosen = None
-        
         while open_set:
-            current_f, _, current_g, current_state = heapq.heappop(open_set)
+            current_f, _, current_g, current_node = heapq.heappop(open_set)
+            current_state = current_node.state
             step_count += 1
             
             if current_state in closed_set:
@@ -264,18 +229,12 @@ class AStarTreasureHunt:
             closed_set.add(current_state)
             
             # Store neighbor evaluation information for this state
-            current_evaluations = {
-                'current_position': current_state.position,
-                'neighbors': [],
-                'step_number': step_count,
-                'current_f': current_f,
-                'current_g': current_g,
-                'current_h': current_f - current_g,
-                'queue_before': [],
-                'queue_after': [],
-                'decision_moment': [],
-                'next_chosen': None  # Will store the next node that A* actually chooses
-            }
+            current_evaluations = PathEvaluationInfo(
+                current_state.position,
+                current_f,
+                current_g,
+                current_f - current_g
+            )
             
             # Check if we've collected all treasures
             if len(current_state.collected_treasures) == len(self.treasures):
@@ -297,9 +256,9 @@ class AStarTreasureHunt:
                 for i in range(len(path) - 1):
                     state = path[i]
                     if state in path_evaluations:
-                        eval_info = path_evaluations[state].copy()
+                        eval_info = path_evaluations[state]
                         next_state = path[i + 1]
-                        eval_info['chosen_position'] = next_state.position
+                        eval_info.chosen_position = next_state.position
                         final_evaluations.append(eval_info)
                 
                 return path, current_g, final_evaluations
@@ -327,37 +286,38 @@ class AStarTreasureHunt:
                     'energy_multiplier': next_state.energy_multiplier,
                     'speed_multiplier': next_state.speed_multiplier
                 }
-                current_evaluations['neighbors'].append(neighbor_info)
+                current_evaluations.neighbors.append(neighbor_info)
                 
                 if next_state not in g_score or tentative_g < g_score[next_state]:
                     came_from[next_state] = current_state
                     g_score[next_state] = tentative_g
                     tie_breaker += 1
-                    nodes_to_add.append((f_score, tie_breaker, tentative_g, next_state))
+                    next_node = Node(next_state, f_score, tentative_g, h_score)
+                    nodes_to_add.append((f_score, tie_breaker, tentative_g, next_node))
             
             # Add new nodes to open set
             for node in nodes_to_add:
                 heapq.heappush(open_set, node)
             
-            # Peek at the next node that will be chosen (for debugging)
+            # Peek at the next node that will be chosen
             if open_set:
-                next_f, _, next_g, next_state = open_set[0]  # Peek without popping
-                current_evaluations['next_chosen'] = {
-                    'position': next_state.position,
+                next_f, _, next_g, next_node = open_set[0]
+                current_evaluations.next_chosen = {
+                    'position': next_node.state.position,
                     'f_score': next_f,
                     'g_score': next_g,
                     'h_score': next_f - next_g
                 }
             
-            # Capture final state of open set after all processing
-            current_evaluations['queue_after'] = [
+            # Capture final state of open set
+            current_evaluations.queue_after = [
                 {
-                    'position': s.position,
+                    'position': node.state.position,
                     'f_score': f,
                     'g_score': g,
                     'h_score': f - g
                 }
-                for f, _, g, s in open_set
+                for f, _, g, node in open_set
             ]
             
             # Store evaluations for current state
@@ -366,7 +326,7 @@ class AStarTreasureHunt:
         # No solution found
         return [], float('inf'), []
 
-    def visualize_solution(self, path: List[GameState], evaluation_history: List[dict] = None):
+    def visualize_solution(self, path: List[GameState], evaluation_history: List[PathEvaluationInfo] = None):
         """Visualize the solution path with enhanced validation and node evaluation information"""
         if not path:
             print("No solution found!")
@@ -377,19 +337,19 @@ class AStarTreasureHunt:
         print(f"Treasures collected: {len(path[-1].collected_treasures)}")
         
         # Show path positions with detailed information
-        print("\nPath Progression with Open Set States For Evaluation:")
+        print("\nPath Progression with Open Set States:")
         for step_info in evaluation_history:
-            current_pos = step_info['current_position']
-            step_num = step_info['step_number']
-            chosen_pos = step_info['chosen_position']  # This is from the final path
-            next_chosen = step_info['next_chosen']  # This is what A* actually chose next
+            current_pos = step_info.current_position
+            chosen_pos = step_info.chosen_position
+            next_chosen = step_info.next_chosen
             
             print(f"\nAt position {current_pos}")
+            print(f"Current node: f(n)={step_info.current_f:.2f}, g(n)={step_info.current_g:.2f}, h(n)={step_info.current_h:.2f}")
             
             print("\nNeighbors evaluated:")
-            print("Position\tg(n)\t\th(n)\t\tf(n)\t\tEffect\t\tChosen\tExpanded Next")
+            print("Position\t\tg(n)\t\th(n)\t\tf(n)\t\tEffect\t\tChosen\tNext")
             print("-" * 100)
-            for neighbor in step_info['neighbors']:
+            for neighbor in step_info.neighbors:
                 pos = neighbor['position']
                 g = neighbor['g_score']
                 h = neighbor['h_score']
@@ -403,9 +363,9 @@ class AStarTreasureHunt:
                 print(f"\nNext node to be expanded by A*: {next_chosen['position']} with f(n)={next_chosen['f_score']:.2f}")
             
             print("\nOpen Set Queue (sorted by f-score):")
-            print("Position\tf(n)\t\tg(n)\t\th(n)")
+            print("Position\t\tf(n)\t\tg(n)\t\th(n)")
             print("-" * 60)
-            sorted_queue = sorted(step_info['queue_after'], key=lambda x: x['f_score'])
+            sorted_queue = sorted(step_info.queue_after, key=lambda x: x['f_score'])
             for node in sorted_queue:
                 print(f"{node['position']}\t\t{node['f_score']:.2f}\t\t{node['g_score']:.2f}\t\t{node['h_score']:.2f}")
             
@@ -414,4 +374,5 @@ class AStarTreasureHunt:
         # Visualize the path
         for i in range(len(path)):
             self.maze.visualize(path[i])
+
 

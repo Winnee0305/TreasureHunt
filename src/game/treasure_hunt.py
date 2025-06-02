@@ -1,4 +1,4 @@
-from HexGrid import create_hex_grid
+from ..models.hex import plot_hex_maze
 import matplotlib.pyplot as plt
 
 class Effect:
@@ -35,7 +35,6 @@ class Effect:
             case _:
                 self.color = '#FFFFFF' # White
         
-
 class HexRoom:
     def __init__(self, room_idx, parent=None):
         self.room_idx = room_idx
@@ -99,7 +98,7 @@ class TreasureHunt:
             for (row, col), color in colors.items()
         }
 
-        fig, ax = create_hex_grid(self.nrow, self.ncol, hex_size=1,
+        fig, ax = plot_hex_maze(self.nrow, self.ncol, hex_size=1,
                         colors=transformed_colors,
                         symbols=transformed_symbols)
         

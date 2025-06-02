@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon, Patch
-import matplotlib.lines as mlines
+from matplotlib.patches import RegularPolygon
 
-def create_hex_grid(rows, cols, hex_size=1, colors=None, labels=None, symbols=None, legend_info=None):
+def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None, legend_info=None):
     """
     Create a hexagonal grid visualization.
     

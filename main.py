@@ -1,6 +1,5 @@
-from TreasureHunt import TreasureHunt
-from Algorithm import AStarTreasureHunt
-
+from game.treasure_hunt import TreasureHunt
+from src.game.astar_solver import AStarTreasureHunt
 if __name__ == "__main__":
     treasureHunt = TreasureHunt(6, 10)
 
