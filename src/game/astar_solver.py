@@ -4,26 +4,49 @@ from ..models.node import Node
 from ..models.path_evaluation_info import PathEvaluationInfo
 from typing import List, Tuple, Set
 import heapq
+from abc import ABC, abstractmethod
 
+# Superclass for A* search algorithm (Allows for different implementations)
+class AStarSearch(ABC):
+    def __init__(self, state):
+        self.state = state # State of the application, e.g. maze or game state
 
-class AStarTreasureHunt:
-    def __init__(self, maze):
-        self.maze = maze
-        self.start_position = (0, 0)
-        self.treasures = self._find_treasures()
+    @abstractmethod
+    def _get_neighbors(self, x, y):
+        """Get neighbors of a node"""
+        raise NotImplementedError("This method should be implemented by subclasses")
+
+    @abstractmethod
+    def _get_successors(self, state):
+        """Get all possible successor states with their costs"""
+        raise NotImplementedError("This method should be implemented by subclasses")
+
+    @abstractmethod
+    def _heuristic(self, state):
+        """Heuristic function for A*"""
+        raise NotImplementedError("This method should be implemented by subclasses")
+    
+    @abstractmethod
+    def solve(self):
+        """Solve the problem using A* algorithm"""
+        raise NotImplementedError("This method should be implemented by subclasses")
+
+# A Star algorithm for solving the treasure hunt problem in a hexagonal grid maze
+class AStarTreasureHunt(AStarSearch):
+    def __init__(self, maze): 
+        super().__init__(maze)
+        self.start_position = (0, 0) # Entry point of the maze
+        self.treasures = self._find_treasures() # Extract all treasure locations from the maze
         
-    def _find_treasures(self) -> Set[Tuple[int, int]]:
-        """Find all treasure locations in the maze"""
+    def _find_treasures(self) -> Set[Tuple[int, int]]: # Find all treasure positions in the maze
         treasures = set()
-        for pos, room in self.maze.rooms.items():
-            if room.effect.name == 'Treasure':
+        for pos, room in self.state.rooms.items():
+            if room.effect.name == 'Treasure': # Check if the room has a treasure
                 treasures.add(pos)
         return treasures
-    
-    def _get_hex_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
-        """Get valid hexagonal grid neighbors for odd-q offset coordinate system"""
+
+    def _get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]: # Get neighbors of a cell in odd-q offset coordinates
         neighbors = []
-        
         # In odd-q offset coordinates, the neighbor directions depend on whether the column is odd or even
         if col % 2 == 0:  # Even column (not offset vertically)
             directions = [
@@ -44,44 +67,41 @@ class AStarTreasureHunt:
                 (0, 1),    # Southeast
             ]
         
-        for dr, dc in directions:
-            new_row, new_col = row + dr, col + dc
-            if (0 <= new_row < self.maze.nrow and 
-                0 <= new_col < self.maze.ncol and
-                (new_row, new_col) in self.maze.rooms):
+        for dr, dc in directions: # Calculate new row and column based on direction
+            new_row, new_col = row + dr, col + dc # new position based on direction
+            if (0 <= new_row < self.state.nrow and 
+                0 <= new_col < self.state.ncol and
+                (new_row, new_col) in self.state.rooms): # Check if the new position is within bounds and exists in the maze
                 # Check if it's not an obstacle
-                room = self.maze.rooms[(new_row, new_col)]
+                room = self.state.rooms[(new_row, new_col)]
                 if room.effect.name != 'Obstacle':
-                    neighbors.append((new_row, new_col))
+                    neighbors.append((new_row, new_col)) # Add valid neighbor to the list
         return neighbors
     
     def _calculate_movement_direction(self, from_pos: Tuple[int, int], to_pos: Tuple[int, int]) -> Tuple[int, int]:
-        """Calculate the direction vector for movement"""
-        return (to_pos[0] - from_pos[0], to_pos[1] - from_pos[1])
+        return (to_pos[0] - from_pos[0], to_pos[1] - from_pos[1]) # Calculate the direction vector from one position to another
     
-    def _apply_trap3_effect(self, current_pos: Tuple[int, int], direction: Tuple[int, int]) -> Tuple[int, int]:
-        """Apply Trap 3 effect - move two cells in the last direction with proper validation"""
-        if direction is None:
+    def _apply_trap3_effect(self, current_pos: Tuple[int, int], direction: Tuple[int, int]) -> Tuple[int, int]: # Apply the Trap 3 effect which teleports the player
+        if direction is None: # If no direction is provided, return the current position
             return current_pos
         
-        # Move one step in the given direction
-        intermediate_pos = (current_pos[0] + direction[0], current_pos[1] + direction[1])
+        intermediate_pos = (current_pos[0] + direction[0], current_pos[1] + direction[1]) # Move one step in the given direction
         
         # Check if intermediate position is valid and not an obstacle
-        if not (0 <= intermediate_pos[0] < self.maze.nrow and 
-                0 <= intermediate_pos[1] < self.maze.ncol and
-                intermediate_pos in self.maze.rooms and
-                self.maze.rooms[intermediate_pos].effect.name != 'Obstacle'):
+        if not (0 <= intermediate_pos[0] < self.state.nrow and 
+                0 <= intermediate_pos[1] < self.state.ncol and
+                intermediate_pos in self.state.rooms and
+                self.state.rooms[intermediate_pos].effect.name != 'Obstacle'):
             return current_pos  # Can't move at all
         
         # Try to move second step
         final_pos = (intermediate_pos[0] + direction[0], intermediate_pos[1] + direction[1])
         
         # Check if final position is valid and not an obstacle
-        if (0 <= final_pos[0] < self.maze.nrow and 
-            0 <= final_pos[1] < self.maze.ncol and
-            final_pos in self.maze.rooms and
-            self.maze.rooms[final_pos].effect.name != 'Obstacle'):
+        if (0 <= final_pos[0] < self.state.nrow and 
+            0 <= final_pos[1] < self.state.ncol and
+            final_pos in self.state.rooms and
+            self.state.rooms[final_pos].effect.name != 'Obstacle'):
             return final_pos
         else:
             return intermediate_pos  # Can only move one step
@@ -89,7 +109,7 @@ class AStarTreasureHunt:
     def _get_successors(self, state: GameState) -> List[Tuple[GameState, float]]:
         """Get all possible successor states with their costs"""
         successors = []
-        neighbors = self._get_hex_neighbors(state.position[0], state.position[1])
+        neighbors = self._get_neighbors(state.position[0], state.position[1])
         
         for next_pos in neighbors:
             # Calculate movement cost based on current state's multipliers
@@ -108,7 +128,7 @@ class AStarTreasureHunt:
             )
             
             # Apply effects of the destination cell AFTER moving there
-            room = self.maze.rooms[next_pos]
+            room = self.state.rooms[next_pos]
             effect_name = room.effect.name
             
             # Check if this effect has already been activated (only for traps and rewards)
@@ -219,16 +239,16 @@ class AStarTreasureHunt:
         step_count = 0
         
         while open_set:
-            current_f, _, current_g, current_node = heapq.heappop(open_set)
-            current_state = current_node.state
-            step_count += 1
+            current_f, _, current_g, current_node = heapq.heappop(open_set) # Get the node with the lowest f-score
+            current_state = current_node.state # Get the state from the current node
+            step_count += 1 
             
-            if current_state in closed_set:
-                continue
+            if current_state in closed_set: # Already evaluated this state
+                continue # Skip to next iteration
                 
-            closed_set.add(current_state)
+            closed_set.add(current_state) # Add current state to closed set to mark it as evaluated
             
-            # Store neighbor evaluation information for this state
+            # Store neighbor evaluation information for this state, to be tracked the process later
             current_evaluations = PathEvaluationInfo(
                 current_state.position,
                 current_f,
@@ -244,22 +264,22 @@ class AStarTreasureHunt:
                 # Reconstruct path
                 path = []
                 state = current_state
-                while state in came_from:
-                    path.append(state)
-                    state = came_from[state]
-                path.append(initial_state)
-                path.reverse()
+                while state in came_from: # Backtrack to reconstruct the path
+                    path.append(state) # Append the current state to the path, which means this state will be finalized into the solution path
+                    state = came_from[state] # Move to the previous state in the path
+                path.append(initial_state) # Add the initial state to the path
+                path.reverse() # Reverse the path to get it from start to goal
                 print(f"Solution found with {len(path)} steps and total cost: {current_g:.2f}")
                 
                 # Only keep evaluations for states in the path
-                final_evaluations = []
+                final_evaluations = [] 
                 for i in range(len(path) - 1):
-                    state = path[i]
-                    if state in path_evaluations:
-                        eval_info = path_evaluations[state]
-                        next_state = path[i + 1]
-                        eval_info.chosen_position = next_state.position
-                        final_evaluations.append(eval_info)
+                    state = path[i] # Get the current state in the path
+                    if state in path_evaluations: # If this state has evaluation information
+                        eval_info = path_evaluations[state]  # Create a copy of the evaluation info
+                        next_state = path[i + 1] # Get the next state in the path
+                        eval_info.chosen_position = next_state.position # Set the chosen position for this step
+                        final_evaluations.append(eval_info) # Append the evaluation info to the final evaluations list
                 
                 return path, current_g, final_evaluations
             
@@ -267,13 +287,13 @@ class AStarTreasureHunt:
             nodes_to_add = []
             
             # Explore successors
-            for next_state, cost in self._get_successors(current_state):
-                if next_state in closed_set:
+            for next_state, cost in self._get_successors(current_state): # Get all possible successor states and their costs
+                if next_state in closed_set:  # Already evaluated this state
                     continue
                 
-                tentative_g = current_g + cost
-                h_score = self._heuristic(next_state)
-                f_score = tentative_g + h_score
+                tentative_g = current_g + cost # Calculate tentative g-score (cost from start to next state)
+                h_score = self._heuristic(next_state) # Calculate heuristic for the next state
+                f_score = tentative_g + h_score # Calculate f-score (total estimated cost)
                 
                 # Store neighbor evaluation information
                 neighbor_info = {
@@ -281,17 +301,17 @@ class AStarTreasureHunt:
                     'g_score': tentative_g,
                     'h_score': h_score,
                     'f_score': f_score,
-                    'effect': self.maze.rooms[next_state.position].effect.name,
+                    'effect': self.state.rooms[next_state.position].effect.name,
                     'treasures_collected': len(next_state.collected_treasures),
                     'energy_multiplier': next_state.energy_multiplier,
                     'speed_multiplier': next_state.speed_multiplier
                 }
                 current_evaluations.neighbors.append(neighbor_info)
                 
-                if next_state not in g_score or tentative_g < g_score[next_state]:
-                    came_from[next_state] = current_state
-                    g_score[next_state] = tentative_g
-                    tie_breaker += 1
+                if next_state not in g_score or tentative_g < g_score[next_state]: # If this is a better path to the next state 
+                    came_from[next_state] = current_state # Record the path to reconstruct later
+                    g_score[next_state] = tentative_g # Update the g-score for the next state
+                    tie_breaker += 1 # Increment tie breaker to ensure unique ordering in the priority queue
                     next_node = Node(next_state, f_score, tentative_g, h_score)
                     nodes_to_add.append((f_score, tie_breaker, tentative_g, next_node))
             
@@ -310,7 +330,7 @@ class AStarTreasureHunt:
                 }
             
             # Capture final state of open set
-            current_evaluations.queue_after = [
+            current_evaluations.queue_after = [ 
                 {
                     'position': node.state.position,
                     'f_score': f,
@@ -349,7 +369,7 @@ class AStarTreasureHunt:
             print("\nNeighbors evaluated:")
             print("Position\t\tg(n)\t\th(n)\t\tf(n)\t\tEffect\t\tChosen\tNext")
             print("-" * 100)
-            for neighbor in step_info.neighbors:
+            for neighbor in step_info.neighbors: # Iterate through neighbors and print their details
                 pos = neighbor['position']
                 g = neighbor['g_score']
                 h = neighbor['h_score']
@@ -359,13 +379,13 @@ class AStarTreasureHunt:
                 next_expanded = "*" if next_chosen and pos == next_chosen['position'] else " "
                 print(f"{pos}\t\t{g:.2f}\t\t{h:.2f}\t\t{f:.2f}\t\t{effect:<12}\t{in_final_path}\t{next_expanded}")
             
-            if next_chosen:
+            if next_chosen: # If there is a next chosen node, print its details
                 print(f"\nNext node to be expanded by A*: {next_chosen['position']} with f(n)={next_chosen['f_score']:.2f}")
             
             print("\nOpen Set Queue (sorted by f-score):")
             print("Position\t\tf(n)\t\tg(n)\t\th(n)")
             print("-" * 60)
-            sorted_queue = sorted(step_info.queue_after, key=lambda x: x['f_score'])
+            sorted_queue = sorted(step_info.queue_after, key=lambda x: x['f_score']) # Sort the queue by f-score
             for node in sorted_queue:
                 print(f"{node['position']}\t\t{node['f_score']:.2f}\t\t{node['g_score']:.2f}\t\t{node['h_score']:.2f}")
             
@@ -373,6 +393,6 @@ class AStarTreasureHunt:
         
         # Visualize the path
         for i in range(len(path)):
-            self.maze.visualize(path[i])
+            self.state.visualize(path[i])
 
 

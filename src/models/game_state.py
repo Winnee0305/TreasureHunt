@@ -13,7 +13,7 @@ class GameState:
     last_direction: Optional[Tuple[int, int]] = None
     total_cost: float = 0.0
     
-    def __hash__(self):
+    def __hash__(self): # Generate a unique hash for the game state
         return hash((
             self.position,
             tuple(sorted(self.collected_treasures)),
@@ -24,10 +24,10 @@ class GameState:
             self.last_direction
         ))
     
-    def __eq__(self, other):
+    def __eq__(self, other): # Check if two game states are equal
         if not isinstance(other, GameState):
             return False
-        return (
+        return ( # Compare all attributes for equality
             self.position == other.position and
             self.collected_treasures == other.collected_treasures and
             self.available_treasures == other.available_treasures and

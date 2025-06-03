@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 
-def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None, legend_info=None):
+def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None, legend_info=None): # To visualize a hexagonal grid
     """
     Create a hexagonal grid visualization.
     
@@ -22,13 +22,27 @@ def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None
         Dictionary with (row, col) tuples as keys and symbol characters as values
     """
     # Initialize figure with white background and larger size
+    def transform_row(row, total_rows): # Transform row index for correct hexagonal layout
+        return total_rows - 1 - row
+    
+
+    transformed_symbols = {
+        (transform_row(row, rows), col): symbol
+        for (row, col), symbol in symbols.items()
+    }
+
+    transformed_colors = {
+        (transform_row(row, rows), col): color
+        for (row, col), color in colors.items()
+    }
+
     fig, ax = plt.subplots(figsize=(20, 15), facecolor='white')
     ax.set_facecolor('white')
     
     # Set default dictionaries if None
-    colors = colors or {}
+    transformed_colors = transformed_colors or {}
     labels = labels or {}
-    symbols = symbols or {}
+    transformed_symbols = transformed_symbols or {}
     
     # Constants for hex grid geometry
     spacing_factor = 1.1  # Increase this to add more space between hexagons
@@ -47,7 +61,7 @@ def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None
                 y += hex_height * spacing_factor / 2
             
             # Create hexagon with thicker edge
-            color = colors.get((row, col), 'white')  # Set default color to white
+            color = transformed_colors.get((row, col), 'white')  # Set default color to white
             hex = RegularPolygon((x, y),
                                numVertices=6,
                                radius=hex_size * 0.95,  # Make hexagons slightly smaller
@@ -58,8 +72,8 @@ def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None
             ax.add_patch(hex)
             
             # Add symbol if specified
-            if (row, col) in symbols:
-                plt.text(x, y, symbols[(row, col)],
+            if (row, col) in transformed_symbols:
+                plt.text(x, y, transformed_symbols[(row, col)],
                         horizontalalignment='center',
                         verticalalignment='center',
                         fontsize=40,

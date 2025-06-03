@@ -1,9 +1,10 @@
 from src.game.treasure_hunt import TreasureHunt
 from src.game.astar_solver import AStarTreasureHunt
-if __name__ == "__main__":
-    treasureHunt = TreasureHunt(6, 10)
 
-    treasureHunt.setEffect({
+if __name__ == "__main__": # Main entry point of the script
+    treasureHunt = TreasureHunt(6, 10) # Create a TreasureHunt instance with 6 rows and 10 columns
+
+    treasureHunt.setEffect({ # Set effects for specific rooms in the treasure hunt
         (3, 0): 'Obstacle',
         (1, 1): 'Trap 2',
         (3, 1): 'Reward 1',
@@ -27,11 +28,11 @@ if __name__ == "__main__":
         (1, 8): 'Obstacle',
         (2, 8): 'Trap 1',
         (3, 9): 'Treasure'
-
     })
-    solver = AStarTreasureHunt(treasureHunt)
 
-    solution_path, total_cost, evaluation_history = solver.solve()
+    solver = AStarTreasureHunt(treasureHunt) # Create an AStarTreasureHunt solver instance with the treasure hunt game
+
+    solution_path, total_cost, evaluation_history = solver.solve() # Solve the treasure hunt and get the solution path, total cost, and evaluation history
     
-    solver.visualize_solution(solution_path, evaluation_history)
+    solver.visualize_solution(solution_path, evaluation_history) # Visualize the solution path and evaluation history
 
