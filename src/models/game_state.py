@@ -12,6 +12,10 @@ class GameState:
     speed_multiplier: float = 1.0   # For Trap 2 and Reward 2
     last_direction: Optional[Tuple[int, int]] = None
     total_cost: float = 0.0
+
+    #For Trap 3
+    forced_steps_remaining: int = 0  # How many forced steps left
+    forced_direction: Optional[Tuple[int, int]] = None  # Direction of forced movement
     
     def __hash__(self): # Generate a unique hash for the game state
         return hash((
@@ -21,7 +25,9 @@ class GameState:
             tuple(sorted(self.activated_effects)),
             self.energy_multiplier,
             self.speed_multiplier,
-            self.last_direction
+            self.last_direction,
+            self.forced_steps_remaining,
+            self.forced_direction
         ))
     
     def __eq__(self, other): # Check if two game states are equal
@@ -34,6 +40,8 @@ class GameState:
             self.activated_effects == other.activated_effects and
             abs(self.energy_multiplier - other.energy_multiplier) < 1e-6 and
             abs(self.speed_multiplier - other.speed_multiplier) < 1e-6 and
-            self.last_direction == other.last_direction
+            self.last_direction == other.last_direction and
+            self.forced_steps_remaining == other.forced_steps_remaining and
+            self.forced_direction == other.forced_direction
         )
 

@@ -109,6 +109,13 @@ class AStarTreasureHunt(AStarSearch):
     def _get_successors(self, state: GameState) -> List[Tuple[GameState, float]]:
         """Get all possible successor states with their costs"""
         successors = []
+        
+        # Check if we're in a forced movement state
+        if state.forced_steps_remaining > 0:
+            # Can only move in the forced direction
+            return self._get_forced_movement_successors(state)
+        
+        # Normal movement - get all neighbors
         neighbors = self._get_neighbors(state.position[0], state.position[1])
         
         for next_pos in neighbors:
@@ -124,14 +131,14 @@ class AStarTreasureHunt(AStarSearch):
                 energy_multiplier=state.energy_multiplier,
                 speed_multiplier=state.speed_multiplier,
                 last_direction=self._calculate_movement_direction(state.position, next_pos),
-                total_cost=state.total_cost + movement_cost
+                total_cost=state.total_cost + movement_cost,
+                forced_steps_remaining=0,  # Reset forced movement
+                forced_direction=None
             )
             
             # Apply effects of the destination cell AFTER moving there
             room = self.state.rooms[next_pos]
             effect_name = room.effect.name
-            
-            # Check if this effect has already been activated (only for traps and rewards)
             effect_already_used = next_pos in state.activated_effects
             
             if effect_name == 'Treasure' and next_pos in new_state.available_treasures:
@@ -150,28 +157,10 @@ class AStarTreasureHunt(AStarSearch):
                 new_state.activated_effects.add(next_pos)
                 
             elif effect_name == 'Trap 3' and not effect_already_used:
-                # For Trap 3, first add the state where we step onto the trap
+                # Activate Trap 3: set up forced movement for next 2 steps
                 new_state.activated_effects.add(next_pos)
-                
-                # Calculate the teleported position
-                current_direction = self._calculate_movement_direction(state.position, next_pos)
-                trap3_pos = self._apply_trap3_effect(next_pos, current_direction)
-                
-                if trap3_pos != next_pos:
-                    teleported_state = GameState(
-                        position=trap3_pos,  # This is the actual final position
-                        collected_treasures=new_state.collected_treasures.copy(),
-                        available_treasures=new_state.available_treasures.copy(),
-                        activated_effects=new_state.activated_effects.copy(),
-                        energy_multiplier=new_state.energy_multiplier,
-                        speed_multiplier=new_state.speed_multiplier,
-                        last_direction=current_direction,
-                        total_cost=new_state.total_cost  # No additional cost for teleportation
-                    )
-                    # Only add the teleported state, not the intermediate state
-                    successors.append((teleported_state, movement_cost))
-                    # Skip adding the original state since we're using the teleported one
-                    continue
+                new_state.forced_steps_remaining = 2
+                new_state.forced_direction = new_state.last_direction
                 
             elif effect_name == 'Trap 4' and not effect_already_used:
                 # Remove all uncollected treasures
@@ -188,8 +177,86 @@ class AStarTreasureHunt(AStarSearch):
                 new_state.speed_multiplier = max(0.125, new_state.speed_multiplier / 2.0)
                 new_state.activated_effects.add(next_pos)
             
-            # Add the state
             successors.append((new_state, movement_cost))
+        
+        return successors
+    
+    def _get_forced_movement_successors(self, state: GameState) -> List[Tuple[GameState, float]]:
+        """Get successors when in forced movement mode (Trap 3 effect)"""
+        successors = []
+        
+        if state.forced_direction is None:
+            # No forced direction, can't move (shouldn't happen)
+            return successors
+        
+        # Calculate forced position
+        forced_pos = (
+            state.position[0] + state.forced_direction[0],
+            state.position[1] + state.forced_direction[1]
+        )
+        
+        # Check if forced position is valid and not an obstacle
+        if (0 <= forced_pos[0] < self.state.nrow and 
+            0 <= forced_pos[1] < self.state.ncol and
+            forced_pos in self.state.rooms and
+            self.state.rooms[forced_pos].effect.name != 'Obstacle'):
+            
+            # Calculate movement cost
+            movement_cost = 1.0 * state.energy_multiplier * state.speed_multiplier
+            
+            # Create new state after forced movement
+            new_state = GameState(
+                position=forced_pos,
+                collected_treasures=state.collected_treasures.copy(),
+                available_treasures=state.available_treasures.copy(),
+                activated_effects=state.activated_effects.copy(),
+                energy_multiplier=state.energy_multiplier,
+                speed_multiplier=state.speed_multiplier,
+                last_direction=state.forced_direction,
+                total_cost=state.total_cost + movement_cost,
+                forced_steps_remaining=state.forced_steps_remaining - 1,  # Decrease counter
+                forced_direction=state.forced_direction  # Keep same direction
+            )
+            
+            # Apply effects at the forced position
+            room = self.state.rooms[forced_pos]
+            effect_name = room.effect.name
+            effect_already_used = forced_pos in state.activated_effects
+            
+            if effect_name == 'Treasure' and forced_pos in new_state.available_treasures:
+                new_state.collected_treasures.add(forced_pos)
+                new_state.available_treasures.remove(forced_pos)
+                
+            elif effect_name == 'Trap 1' and not effect_already_used:
+                new_state.energy_multiplier *= 2.0
+                new_state.activated_effects.add(forced_pos)
+                
+            elif effect_name == 'Trap 2' and not effect_already_used:
+                new_state.speed_multiplier *= 2.0
+                new_state.activated_effects.add(forced_pos)
+                
+            elif effect_name == 'Trap 3' and not effect_already_used:
+                # Landing on another Trap 3 during forced movement
+                new_state.activated_effects.add(forced_pos)
+                new_state.forced_steps_remaining = 2
+                new_state.forced_direction = new_state.last_direction
+                
+            elif effect_name == 'Trap 4' and not effect_already_used:
+                new_state.available_treasures.clear()
+                new_state.activated_effects.add(forced_pos)
+                
+            elif effect_name == 'Reward 1' and not effect_already_used:
+                new_state.energy_multiplier = max(0.125, new_state.energy_multiplier / 2.0)
+                new_state.activated_effects.add(forced_pos)
+                
+            elif effect_name == 'Reward 2' and not effect_already_used:
+                new_state.speed_multiplier = max(0.125, new_state.speed_multiplier / 2.0)
+                new_state.activated_effects.add(forced_pos)
+            
+            successors.append((new_state, movement_cost))
+        
+        # If forced movement is blocked, the player is stuck (no successors)
+        # This represents being unable to complete the forced movement
         
         return successors
 
@@ -220,7 +287,9 @@ class AStarTreasureHunt(AStarSearch):
             collected_treasures=set(),
             available_treasures=self.treasures.copy(),
             activated_effects=set(),
-            total_cost=0.0
+            total_cost=0.0,
+            forced_steps_remaining=0,
+            forced_direction=None
         )
         
         # Priority queue: (f_score, tie_breaker, g_score, state)
