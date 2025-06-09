@@ -481,41 +481,6 @@ class AStarTreasureHunt(AStarSearch):
         print(f"Solution found with {len(path)-1} steps!") # -1 because the initial state is not included in the path
         print(f"Total cost: {path[-1].total_cost:.2f}")
         print(f"Treasures collected: {len(path[-1].collected_treasures)}")
-        
-        # # Show path positions with detailed information
-        # print("\nPath Progression with Open Set States:")
-        # for step_info in evaluation_history:
-        #     current_pos = step_info.current_position
-        #     chosen_pos = step_info.chosen_position
-        #     next_chosen = step_info.next_chosen
-            
-        #     print(f"\nAt position {current_pos}")
-        #     print(f"Current node: f(n)={step_info.current_f:.2f}, g(n)={step_info.current_g:.2f}, h(n)={step_info.current_h:.2f}")
-            
-        #     print("\nNeighbors evaluated:")
-        #     print("Position\t\tg(n)\t\th(n)\t\tf(n)\t\tEffect\t\tChosen\tNext")
-        #     print("-" * 100)
-        #     for neighbor in step_info.neighbors: # Iterate through neighbors and print their details
-        #         pos = neighbor['position']
-        #         g = neighbor['g_score']
-        #         h = neighbor['h_score']
-        #         f = neighbor['f_score']
-        #         effect = neighbor['effect']
-        #         in_final_path = "→" if pos == chosen_pos else " "
-        #         next_expanded = "*" if next_chosen and pos == next_chosen['position'] else " "
-        #         print(f"{pos}\t\t{g:.2f}\t\t{h:.2f}\t\t{f:.2f}\t\t{effect:<12}\t{in_final_path}\t{next_expanded}")
-            
-        #     if next_chosen: # If there is a next chosen node, print its details
-        #         print(f"\nNext node to be expanded by A*: {next_chosen['position']} with f(n)={next_chosen['f_score']:.2f}")
-            
-        #     print("\nOpen Set Queue (sorted by f-score):")
-        #     print("Position\t\tf(n)\t\tg(n)\t\th(n)")
-        #     print("-" * 60)
-        #     sorted_queue = sorted(step_info.queue_after, key=lambda x: x['f_score']) # Sort the queue by f-score
-        #     for node in sorted_queue:
-        #         print(f"{node['position']}\t\t{node['f_score']:.2f}\t\t{node['g_score']:.2f}\t\t{node['h_score']:.2f}")
-            
-        #     print("\n" + "="*100)
 
         print("\nDetailed Path:")
         for i, state in enumerate(path):
