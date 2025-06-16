@@ -4,14 +4,14 @@ from typing import Tuple, Set, Optional
 @dataclass
 class GameState:
     """Represents the current state of the game"""
-    self.position: Tuple[int, int]
-    self.step: int 
-    self.collected_treasures: Set[Tuple[int, int]]
-    self.available_treasures: Set[Tuple[int, int]]
-    self.activated_effects: Set[Tuple[int, int]]  # Track which traps/rewards have been used
-    self.energy_multiplier: float = 1.0  # For Trap 1 and Reward 1
-    self.last_direction: Optional[Tuple[int, int]] = None
-    self.total_cost: float = 0.0
+    position: Tuple[int, int]
+    step: int 
+    collected_treasures: Set[Tuple[int, int]]
+    available_treasures: Set[Tuple[int, int]]
+    activated_effects: Set[Tuple[int, int]]  # Track which traps/rewards have been used
+    energy_multiplier: float = 1.0  # For Trap 1 and Reward 1
+    last_direction: Optional[Tuple[int, int]] = None
+    total_cost: float = 0.0
 
     #For Trap 3
     forced_steps_remaining: int = 0  # How many forced steps left
@@ -42,4 +42,3 @@ class GameState:
             self.forced_steps_remaining == other.forced_steps_remaining and
             self.forced_direction == other.forced_direction
         )
-

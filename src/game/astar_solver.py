@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 # Superclass for A* search algorithm (Allows for different implementations)
 class AStarSearch(ABC):
     def __init__(self, state):
+        
         self.state = state # State of the application, e.g. maze or game state
 
     @abstractmethod
