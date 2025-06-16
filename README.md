@@ -51,10 +51,12 @@ src/
    ```bash
    pip install matplotlib numpy
    ```
-3. Run the main script:
+3. Run the main script in an interactive Python environment (e.g., VS Code's interactive window, Jupyter Notebook) to properly view the plotted diagrams:
    ```bash
    python src/main.py
    ```
+
+Alternatively, you can run it directly from your terminal, but the plots might close automatically unless you explicitly handle the plot display (e.g., by adding `plt.show()` and keeping the plot window open).
 
 ## Game Elements
 
