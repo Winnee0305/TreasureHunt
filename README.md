@@ -58,6 +58,8 @@ src/
 
 Alternatively, you can run it directly from your terminal, but the plots might close automatically unless you explicitly handle the plot display (e.g., by adding `plt.show()` and keeping the plot window open).
 
+** Note: The first run may take some time as the program prints detailed information about the search process step-by-step
+
 ## Game Elements
 
 - **Treasures**: Must be collected to complete the game
