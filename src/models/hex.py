@@ -5,23 +5,8 @@ from matplotlib.patches import RegularPolygon
 def plot_hex_maze(rows, cols, hex_size=1, colors=None, labels=None, symbols=None, legend_info=None): # To visualize a hexagonal grid
     """
     Create a hexagonal grid visualization.
-    
-    Parameters:
-    -----------
-    rows : int
-        Number of rows in the grid
-    cols : int
-        Number of columns in the grid
-    hex_size : float
-        Size of the hexagons (radius)
-    colors : dict
-        Dictionary with (row, col) tuples as keys and colors as values
-    labels : dict
-        Dictionary with (row, col) tuples as keys and label texts as values
-    symbols : dict
-        Dictionary with (row, col) tuples as keys and symbol characters as values
     """
-    # Initialize figure with white background and larger size
+    
     def transform_row(row, total_rows): # Transform row index for correct hexagonal layout
         return total_rows - 1 - row
     

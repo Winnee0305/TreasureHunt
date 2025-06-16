@@ -1,6 +1,6 @@
-from ..models.game_state import GameState
-from ..models.node import Node
-from ..models.path_evaluation_info import PathEvaluationInfo
+from src.models.game_state import GameState
+from src.models.node import Node
+from src.models.path_evaluation_info import PathEvaluationInfo
 from typing import List, Tuple, Set
 import heapq
 from abc import ABC, abstractmethod
@@ -34,7 +34,7 @@ class AStarSearch(ABC):
 class AStarTreasureHunt(AStarSearch):
     def __init__(self, maze): 
         super().__init__(maze)
-        self.start_position = (0, 0) # Entry point of the maze
+        self.start_position = maze.starting_room # Starting room of the maze
         self.treasures = self._find_treasures() # Extract all treasure locations from the maze
         
     def _find_treasures(self) -> Set[Tuple[int, int]]: # Find all treasure positions in the maze
@@ -142,7 +142,7 @@ class AStarTreasureHunt(AStarSearch):
                 available_treasures=state.available_treasures.copy(),
                 activated_effects=state.activated_effects.copy(),
                 energy_multiplier=state.energy_multiplier,
-                last_direction=self._calculate_movement_direction(state.position, next_pos),
+                last_direction=(next_pos[0] - state.position[0], next_pos[1] - state.position[1]),
                 total_cost=state.total_cost + movement_cost,
                 forced_steps_remaining=0,  # Reset forced movement
                 forced_direction=None

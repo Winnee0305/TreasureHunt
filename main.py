@@ -1,7 +1,11 @@
 from src.game.treasure_hunt import TreasureHunt
 from src.game.astar_solver import AStarTreasureHunt
+import time  
+
+
 
 if __name__ == "__main__": # Main entry point of the script
+    start_time = time.time()
     treasureHunt = TreasureHunt(6, 10) # Create a TreasureHunt instance with 6 rows and 10 columns
 
     treasureHunt.setEffect({ # Set effects for specific rooms in the treasure hunt
@@ -36,3 +40,5 @@ if __name__ == "__main__": # Main entry point of the script
     
     solver.visualize_solution(solution_path, evaluation_history) # Visualize the solution path and evaluation history
 
+    end_time = time.time()
+    print(f"Time taken: {end_time - start_time} seconds")

@@ -1,6 +1,5 @@
 from typing import List, Tuple,Optional, Dict, Any
 
-
 class PathEvaluationInfo:
     """Stores evaluation information for a node in the path"""
     def __init__(self, current_position: Tuple[int, int], current_f: float, current_g: float, current_h: float):

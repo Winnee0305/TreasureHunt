@@ -1,4 +1,4 @@
-from ..models.hex import plot_hex_maze
+from src.models.hex import plot_hex_maze
 import matplotlib.pyplot as plt
 
 class Effect: # Represents an effect in the hexagonal grid
