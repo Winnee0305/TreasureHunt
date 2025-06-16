@@ -9,6 +9,10 @@
 
 This project implements an A\* pathfinding algorithm to solve a treasure hunt game on a hexagonal grid. The game includes various elements such as treasures, traps, and rewards that affect the pathfinding strategy.
 
+## GitHub Repository Link
+https://github.com/Winnee0305/TreasureHunt
+
+
 ## Project Structure
 
 ```
